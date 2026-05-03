@@ -1,0 +1,12 @@
+{
+    // 启用 C/C++ 扩展
+    "C_Cpp.formatting": "clangFormat",
+    // 保存自动格式化
+    "editor.formatOnSave": true,
+    // C++ 默认格式化工具设为 C/C++ 扩展
+    "[cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
+    // clang-format 核心：命名空间不缩进
+    "C_Cpp.clang_format_style": "{ IndentWidth: 4, NamespaceIndentation: None, AccessModifierOffset: -4, BreakBeforeBraces: Custom, BraceWrapping: { AfterFunction: true, AfterClass: true, AfterNamespace: true, AfterControlStatement: false } }"
+}
