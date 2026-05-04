@@ -10,6 +10,7 @@
  */
 #ifndef ASYNC_LOGGER_HPP
 #define ASYNC_LOGGER_HPP
+#include "AsyncWorker.hpp"
 #include "LogFlush.hpp"
 #include <cstdarg>
 #include <iostream>
@@ -88,7 +89,8 @@ struct logMassage {
 class AsyncLogger {
 public:
     AsyncLogger(std::string logFileName, const std::vector<std::shared_ptr<LogFlush>> &logFlush)
-        : m_logFileName(logFileName), m_logFlush(logFlush) {};
+        : m_logFileName(logFileName), m_logFlush(logFlush),
+          m_asyncWorker(AsyncType::ASYNC_SAFE, std::bind(&AsyncLogger::Flush, this, std::placeholders::_1, std::placeholders::_2)) {};
     ~AsyncLogger() = default;
     void AsyncLogFlush(const char *file, size_t line, LogLevel::value level, const char *fmt, ...)
     {
@@ -105,6 +107,13 @@ public:
         va_end(va);
         free(msg);
     }
+    void Flush(const char *data, size_t size)
+    {
+        // 回调在异步线程订阅，数据准备好自动触发
+        for (const auto &flush : m_logFlush) {
+            flush->Flush(data, size);
+        }
+    }
 
 private:
     void Serialze(const std::string &fileName, size_t line, LogLevel::value level, char *msg)
@@ -112,13 +121,13 @@ private:
         // 组装日志信息, 添加时间, 等级，进程ID
         logMassage log(fileName, line, "", level, msg);
         auto str = log.format();
-        for (const auto &flush : m_logFlush) {
-            flush->Flush(str.c_str(), str.length());
-        }
+        m_asyncWorker.Push(str.c_str(), str.size());
     }
     // 内部实现细节
     std::string m_logFileName;
     std::vector<std::shared_ptr<LogFlush>> m_logFlush;
+    AsyncWorker m_asyncWorker;
+
 };
 
 } // namespace AsyncLog

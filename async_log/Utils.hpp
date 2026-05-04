@@ -19,6 +19,8 @@
 #include <cstdio>
 #include <iomanip>
 #include <sstream>
+#ifndef UTILS
+#define UTILS
 namespace AsyncLog::Utils {
 class Time {
 private:
@@ -139,3 +141,4 @@ public:
 }; // class file
 
 } // namespace AsyncLog::Utils
+#endif
