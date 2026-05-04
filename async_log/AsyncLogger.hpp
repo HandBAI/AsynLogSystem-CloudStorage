@@ -12,7 +12,6 @@
 #define ASYNC_LOGGER_HPP
 #include "LogFlush.hpp"
 #include <cstdarg>
-#include <ctime>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -22,29 +21,21 @@
 // 日志解析
 // 日志写入
 
-namespace AsyncLog
-{
+namespace AsyncLog {
 
-#define Debug(fmt, ...)                                                        \
-    AsyncLogFlush(__FILE__, __LINE__, AsyncLog::LogLevel::value::DEBUG, fmt,   \
-                  ##__VA_ARGS__)
-#define Info(fmt, ...)                                                         \
-    AsyncLogFlush(__FILE__, __LINE__, AsyncLog::LogLevel::value::INFO, fmt,    \
-                  ##__VA_ARGS__)
-#define Warn(fmt, ...)                                                         \
-    AsyncLogFlush(__FILE__, __LINE__, AsyncLog::LogLevel::value::WARN, fmt,    \
-                  ##__VA_ARGS__)
-#define Error(fmt, ...)                                                        \
-    AsyncLogFlush(__FILE__, __LINE__, AsyncLog::LogLevel::value::ERROR, fmt,   \
-                  ##__VA_ARGS__)
-#define Fatal(fmt, ...)                                                        \
-    AsyncLogFlush(__FILE__, __LINE__, AsyncLog::LogLevel::value::FATAL, fmt,   \
-                  ##__VA_ARGS__)
+#define Debug(fmt, ...) AsyncLogFlush(__FILE__, __LINE__, AsyncLog::LogLevel::value::DEBUG, fmt, ##__VA_ARGS__)
+#define Info(fmt, ...) AsyncLogFlush(__FILE__, __LINE__, AsyncLog::LogLevel::value::INFO, fmt, ##__VA_ARGS__)
+#define Warn(fmt, ...) AsyncLogFlush(__FILE__, __LINE__, AsyncLog::LogLevel::value::WARN, fmt, ##__VA_ARGS__)
+#define Error(fmt, ...) AsyncLogFlush(__FILE__, __LINE__, AsyncLog::LogLevel::value::ERROR, fmt, ##__VA_ARGS__)
+#define Fatal(fmt, ...) AsyncLogFlush(__FILE__, __LINE__, AsyncLog::LogLevel::value::FATAL, fmt, ##__VA_ARGS__)
 
-class LogLevel
-{
+class LogLevel {
 public:
-    enum class value { DEBUG, INFO, WARN, ERROR, FATAL };
+    enum class value { DEBUG,
+                       INFO,
+                       WARN,
+                       ERROR,
+                       FATAL };
 
     // 提供日志等级的字符串转换接口
     static const char *ToString(value level)
@@ -79,11 +70,7 @@ struct logMassage {
     {
         std::ostringstream oss;
         // 进程id+时间+等级+文件名+行号+信息
-        struct tm t;
-        localtime_r(&m_ctime, &t);
-        char buf[128];
-        strftime(buf, sizeof(buf), "%H:%M:%S", &t);
-        oss << "[" << m_threadId << "][" << buf << "]["
+        oss << "[" << m_threadId << "][" << Utils::Time::GetCurTime() << "]["
             << LogLevel::ToString(m_level) << "][" << m_fileName << ":"
             << m_line << "]" << m_payLoad << "\n";
         return oss.str();
@@ -97,14 +84,12 @@ struct logMassage {
     time_t m_ctime;
 };
 
-class AsyncLogger
-{
+class AsyncLogger {
 public:
     AsyncLogger(std::string logFileName, std::shared_ptr<LogFlush> logFlush)
         : m_logFileName(logFileName), m_logFlush(logFlush) {};
     ~AsyncLogger() = default;
-    void AsyncLogFlush(const char *file, size_t line, LogLevel::value level,
-                       const char *fmt, ...)
+    void AsyncLogFlush(const char *file, size_t line, LogLevel::value level, const char *fmt, ...)
     {
         // 打印输入参数
         va_list va;
@@ -115,15 +100,13 @@ public:
         if (result == -1) {
             perror("vasprintf failed!!!: ");
         }
-        std::cout << msg << std::endl;
         Serialze(file, line, level, msg);
         va_end(va);
         free(msg);
     }
 
 private:
-    void Serialze(const std::string &fileName, size_t line,
-                  LogLevel::value level, char *msg)
+    void Serialze(const std::string &fileName, size_t line, LogLevel::value level, char *msg)
     {
         // 组装日志信息, 添加时间, 等级，进程ID
         logMassage log(fileName, line, "", level, msg);

@@ -8,31 +8,94 @@
  * @copyright Copyright (c) 2026
  *
  */
+#include <chrono>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
-namespace AsyncLog::Utils
-{
 
-class File
-{
+#include <cstdio>
+#include <iomanip>
+#include <sstream>
+namespace AsyncLog::Utils {
+class Time {
+private:
+    /* data */
 public:
-    static std::string Path(const std::string &filename)
+    Time(/* args */) = default;
+    ~Time() = default;
+    static std::string GetCurrentTimeStamp(int time_stamp_type = 0)
     {
-        if (filename.empty())
-            return "";
-        int pos = filename.find_last_of("/\\");
-        if (pos != std::string::npos)
-            return filename.substr(0, pos + 1);
-        return "";
+        std::chrono::system_clock::time_point now =
+            std::chrono::system_clock::now();
+
+        std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
+        std::tm *now_tm = std::localtime(&now_time_t);
+
+        char buffer[128];
+        strftime(buffer, sizeof(buffer), "%F_%T", now_tm);
+
+        std::ostringstream ss;
+        ss.fill('0');
+
+        std::chrono::milliseconds ms;
+        std::chrono::microseconds cs;
+        std::chrono::nanoseconds ns;
+
+        switch (time_stamp_type) {
+        case 0:
+            ss << buffer;
+            break;
+        case 1:
+            ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+            ss << buffer << ":" << ms.count();
+            break;
+        case 2:
+            ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+            cs = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()) % 1000000;
+            ss << buffer << ":" << ms.count() << ":" << cs.count() % 1000;
+            break;
+        case 3:
+            ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+            cs = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()) % 1000000;
+            ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()) % 1000000000;
+            ss << buffer << ":" << ms.count() << ":" << cs.count() % 1000 << ":" << ns.count() % 1000;
+            break;
+        default:
+            ss << buffer;
+            break;
+        }
+
+        return ss.str();
     }
+
+    static std::string GetCurTime() { return GetCurrentTimeStamp(2); }
+};
+
+class File {
+public:
     // 辅助函数：判断文件/目录是否存在
     static bool Exists(const std::string &path)
     {
         struct stat info{};
         return stat(path.c_str(), &info) == 0;
+    }
+
+    static std::pair<std::string, std::string> GetDirAndFileName(const std::string &filePath)
+    {
+        size_t pos = filePath.find_last_of("/\\");
+        if (pos == std::string::npos) {
+            return std::pair("", "");
+        }
+        auto dir = filePath.substr(0, pos);
+        auto file = filePath.substr(pos + 1, std::string::npos);
+        pos = file.find_last_of('.');
+        if (pos == std::string::npos) {
+            return std::pair(dir, "");
+        }
+        return std::pair(dir, file.substr(0, pos));
     }
 
     static void CreateParentDirectory(const std::string &filePath)
@@ -42,14 +105,12 @@ public:
             std::string dir = filePath.substr(0, pos);
             CreateDirectory(dir);
         }
-        std::cout << "No directory is needed to be created." << std::endl;
     }
 
     // 递归创建多级目录（兼容 Linux/macOS）
     static void CreateDirectory(const std::string &path)
     {
         if (Exists(path)) {
-            std::cout << "director is exist: " << path << std::endl;
             return;
         }
 
@@ -65,7 +126,7 @@ public:
         }
     }
 
-    int64_t FileSize(std::string filename)
+    static int64_t GetFileSize(std::string filename)
     {
         struct stat s;
         auto ret = stat(filename.c_str(), &s);
@@ -74,32 +135,6 @@ public:
             return -1;
         }
         return s.st_size;
-    }
-    // 获取文件内容
-    bool GetContent(std::string *content, std::string filename)
-    {
-        // 打开文件
-        std::ifstream ifs;
-        ifs.open(filename.c_str(), std::ios::binary);
-        if (ifs.is_open() == false) {
-            std::cout << "file open error" << std::endl;
-            return false;
-        }
-
-        // 读入content
-        ifs.seekg(0, std::ios::beg); // 更改文件指针的偏移量
-        size_t len = FileSize(filename);
-        content->resize(len);
-        ifs.read(&(*content)[0], len);
-        if (!ifs.good()) {
-            std::cout << __FILE__ << __LINE__ << "-"
-                      << "read file content error" << std::endl;
-            ifs.close();
-            return false;
-        }
-        ifs.close();
-
-        return true;
     }
 }; // class file
 
