@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string>
 #include <thread>
+#include <vector>
 // 日志解析
 // 日志写入
 
@@ -86,7 +87,7 @@ struct logMassage {
 
 class AsyncLogger {
 public:
-    AsyncLogger(std::string logFileName, std::shared_ptr<LogFlush> logFlush)
+    AsyncLogger(std::string logFileName, const std::vector<std::shared_ptr<LogFlush>> &logFlush)
         : m_logFileName(logFileName), m_logFlush(logFlush) {};
     ~AsyncLogger() = default;
     void AsyncLogFlush(const char *file, size_t line, LogLevel::value level, const char *fmt, ...)
@@ -111,11 +112,13 @@ private:
         // 组装日志信息, 添加时间, 等级，进程ID
         logMassage log(fileName, line, "", level, msg);
         auto str = log.format();
-        m_logFlush->Flush(str.c_str(), str.length());
+        for (const auto &flush : m_logFlush) {
+            flush->Flush(str.c_str(), str.length());
+        }
     }
     // 内部实现细节
     std::string m_logFileName;
-    std::shared_ptr<LogFlush> m_logFlush;
+    std::vector<std::shared_ptr<LogFlush>> m_logFlush;
 };
 
 } // namespace AsyncLog

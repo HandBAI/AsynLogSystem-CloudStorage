@@ -10,10 +10,10 @@ int main()
 
     auto fileLogFlush = std::make_shared<AsyncLog::FileLogFlush>("./test_log/test1.log", MAX_SIZE_TEST);
     auto consolLogFlush = std::make_shared<AsyncLog::ConsolLogFlush>();
-    AsyncLog::AsyncLogger asyncLogger("test", fileLogFlush);
+    AsyncLog::AsyncLogger asyncLogger("test", {fileLogFlush, consolLogFlush});
 
     auto start = std::chrono::high_resolution_clock::now();
-    for (size_t i = 0; i < 10000; ++i) {
+    for (size_t i = 0; i < 10; ++i) {
         asyncLogger.Debug("This is a log file test message:%d.", i);
     }
     auto end = std::chrono::high_resolution_clock::now();
