@@ -43,17 +43,27 @@ public:
     FileLogFlush(const std::string &fileName) : m_fileName(fileName)
     {
         // 创建目录 打开文件
-        Utils::File::CreateDirectory(fileName);
+        std::cout << m_fileName << std::endl;
+        Utils::File::CreateParentDirectory(fileName);
         m_fs = fopen(fileName.c_str(), "ab");
-        if (m_fs == NULL) {
-            std::cout << __FILE__ << __LINE__ << "open log file failed"
-                      << std::endl;
-            perror(NULL);
+        // 2. 打开失败处理
+        if (m_fs == nullptr) {
+            // 输出：哪一行 + 系统错误原因
+            std::cerr << __FILE__ << ":" << __LINE__ << " ";
+            perror("open log file failed");
+
+            // 3. 构造函数失败：必须保证指针为空，防止后续崩溃
+            m_fs = nullptr;
+            return;
         }
     };
     virtual ~FileLogFlush() = default;
     void Flush(const char *msg, size_t len) override
     {
+        if (m_fs == nullptr) {
+            perror("open log file failed");
+            return;
+        }
         fwrite(msg, 1, len, m_fs);
         if (ferror(m_fs)) {
             std::cout << __FILE__ << __LINE__ << "write log file failed"

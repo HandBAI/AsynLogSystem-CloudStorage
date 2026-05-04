@@ -15,14 +15,10 @@
 #include <sys/types.h>
 namespace AsyncLog::Utils
 {
+
 class File
 {
 public:
-    static bool Exists(const std::string &filename)
-    {
-        struct stat st;
-        return (0 == stat(filename.c_str(), &st));
-    }
     static std::string Path(const std::string &filename)
     {
         if (filename.empty())
@@ -32,38 +28,40 @@ public:
             return filename.substr(0, pos + 1);
         return "";
     }
-    static void CreateDirectory(const std::string &pathname)
+    // 辅助函数：判断文件/目录是否存在
+    static bool Exists(const std::string &path)
     {
-        if (pathname.empty())
-            perror("文件所给路径为空：");
-        // 文件不存在再创建
-        if (!Exists(pathname)) {
-            size_t pos, index = 0;
-            size_t size = pathname.size();
-            while (index < size) {
-                pos = pathname.find_first_of("/", index);
-                if (pos == std::string::npos) {
-                    mkdir(pathname.c_str(), 0755);
-                    return;
-                }
-                if (pos == index) {
-                    index = pos + 1;
-                    continue;
-                }
+        struct stat info{};
+        return stat(path.c_str(), &info) == 0;
+    }
 
-                std::string sub_path = pathname.substr(0, pos);
-                if (sub_path == "." || sub_path == "..") {
-                    index = pos + 1;
-                    continue;
-                }
-                if (Exists(sub_path)) {
-                    index = pos + 1;
-                    continue;
-                }
+    static void CreateParentDirectory(const std::string &filePath)
+    {
+        size_t pos = filePath.find_last_of("/\\");
+        if (pos != std::string::npos) {
+            std::string dir = filePath.substr(0, pos);
+            CreateDirectory(dir);
+        }
+        std::cout << "No directory is needed to be created." << std::endl;
+    }
 
-                mkdir(sub_path.c_str(), 0755);
-                index = pos + 1;
-            }
+    // 递归创建多级目录（兼容 Linux/macOS）
+    static void CreateDirectory(const std::string &path)
+    {
+        if (Exists(path)) {
+            std::cout << "director is exist: " << path << std::endl;
+            return;
+        }
+
+        size_t pos = path.find_last_of("/\\");
+        if (pos != std::string::npos) {
+            // 截取父目录并递归创建
+            std::string parent_path = path.substr(0, pos);
+            CreateDirectory(parent_path);
+        }
+
+        if (mkdir(path.c_str(), 0755) == -1) {
+            perror(("Create director failed:" + path).c_str());
         }
     }
 
@@ -105,4 +103,4 @@ public:
     }
 }; // class file
 
-} // namespace AsyncLog
+} // namespace AsyncLog::Utils

@@ -5,7 +5,8 @@ int main()
 {
     std::cout << "Async logger test." << std::endl;
 
-    auto fileLogFlush = std::make_shared<AsyncLog::FileLogFlush>("./test.log");
+    auto fileLogFlush =
+        std::make_shared<AsyncLog::FileLogFlush>("./test_log/test1.log");
     auto consolLogFlush = std::make_shared<AsyncLog::ConsolLogFlush>();
     AsyncLog::AsyncLogger asyncLogger("test", fileLogFlush);
 

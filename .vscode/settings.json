@@ -1,10 +1,32 @@
 {
+    // ==================== 全局编码 UTF-8 ====================
+    "files.encoding": "utf8",
+    "[javascript]": {
+        "files.encoding": "utf8"
+    },
+    "[c]": {
+        "files.encoding": "utf8"
+    },
+    "[python]": {
+        "files.encoding": "utf8"
+    },
+    "[h]": {
+        "files.encoding": "utf8"
+    },
+    "[hpp]": {
+        "files.encoding": "utf8"
+    },
+    "files.autoGuessEncoding": false,
+    // ==================== 全局换行符 LF ====================
+    "files.eol": "\n",
+    // ==================== 保存自动格式化（可选） ====================
+    "editor.formatOnSave": true,
+    "editor.trimAutoWhitespace": true,
     // 启用 C/C++ 扩展
     "C_Cpp.formatting": "clangFormat",
-    // 保存自动格式化
-    "editor.formatOnSave": true,
     // C++ 默认格式化工具设为 C/C++ 扩展
     "[cpp]": {
+        "files.encoding": "utf8",
         "editor.defaultFormatter": "ms-vscode.cpptools"
     },
     // clang-format 核心：命名空间不缩进
