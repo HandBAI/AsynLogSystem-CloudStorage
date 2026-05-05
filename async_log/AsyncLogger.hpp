@@ -88,8 +88,8 @@ struct logMassage {
 
 class AsyncLogger {
 public:
-    AsyncLogger(std::string logFileName, const std::vector<std::shared_ptr<LogFlush>> &logFlush)
-        : m_logFileName(logFileName), m_logFlush(logFlush),
+    AsyncLogger(std::string loggerName, const std::vector<std::shared_ptr<LogFlush>> &logFlush)
+        : m_loggerName(loggerName), m_logFlush(logFlush),
           m_asyncWorker(AsyncType::ASYNC_SAFE, std::bind(&AsyncLogger::Flush, this, std::placeholders::_1, std::placeholders::_2)) {};
     ~AsyncLogger() = default;
     void AsyncLogFlush(const char *file, size_t line, LogLevel::value level, const char *fmt, ...)
@@ -114,6 +114,10 @@ public:
             flush->Flush(data, size);
         }
     }
+    std::string Name()
+    {
+        return m_loggerName;
+    }
 
 private:
     void Serialze(const std::string &fileName, size_t line, LogLevel::value level, char *msg)
@@ -124,7 +128,7 @@ private:
         m_asyncWorker.Push(str.c_str(), str.size());
     }
     // 内部实现细节
-    std::string m_logFileName;
+    std::string m_loggerName;
     std::vector<std::shared_ptr<LogFlush>> m_logFlush;
     AsyncWorker m_asyncWorker;
 };
@@ -132,13 +136,13 @@ private:
 //
 class LoggerBuilder {
 public:
-    std::shared_ptr<AsyncLogger> Build(const std::string &filePath, AsyncType asyncType, const std::vector<std::shared_ptr<LogFlush>> &flush)
+    std::shared_ptr<AsyncLogger> Build(const std::string &loggerName, AsyncType asyncType, const std::vector<std::shared_ptr<LogFlush>> &flush)
     {
         m_logFlush = flush;
         if (m_logFlush.empty()) {
             m_logFlush.emplace_back(std::make_shared<ConsolLogFlush>());
         }
-        return std::make_shared<AsyncLogger>(filePath, m_logFlush);
+        return std::make_shared<AsyncLogger>(loggerName, m_logFlush);
     }
 
 private:
