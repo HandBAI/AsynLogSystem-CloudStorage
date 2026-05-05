@@ -127,8 +127,22 @@ private:
     std::string m_logFileName;
     std::vector<std::shared_ptr<LogFlush>> m_logFlush;
     AsyncWorker m_asyncWorker;
-
 };
+// 创建并返回日志指针，通过日志名及日志模式构造
+//
+class LoggerBuilder {
+public:
+    std::shared_ptr<AsyncLogger> Build(const std::string &filePath, AsyncType asyncType, const std::vector<std::shared_ptr<LogFlush>> &flush)
+    {
+        m_logFlush = flush;
+        if (m_logFlush.empty()) {
+            m_logFlush.emplace_back(std::make_shared<ConsolLogFlush>());
+        }
+        return std::make_shared<AsyncLogger>(filePath, m_logFlush);
+    }
 
+private:
+    std::vector<std::shared_ptr<LogFlush>> m_logFlush;
+};
 } // namespace AsyncLog
 #endif // ASYNC_LOGGER_HPP
